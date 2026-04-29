@@ -17,12 +17,12 @@ reasonable = "0.1.0"
 
 ## Usage
 
-The main feature currently is `UnfairRateLimiter`. There are future plans for
-adding a fair rate limiter.
+The main feature currently is `trailing_edge::UnfairRateLimiter`. There are
+future plans for adding a fair rate limiter.
 
 ```rust
-use reasonable::UnfairRateLimiter;
 use chrono::Duration;
+use reasonable::{trailing_edge::UnfairRateLimiter, RateLimiter as _};
 
 #[tokio::main]
 async fn main() {
