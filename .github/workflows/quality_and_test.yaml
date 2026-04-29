@@ -34,7 +34,7 @@ jobs:
       - run: nix flake check --no-update-lock-file
       - run: nix develop -c uv sync --locked
 
-      - run: nix develop -c make quality
-      - run: nix develop -c make check-all-features
+      - run: nix develop -c just quality
+      - run: nix develop -c just check-all-features
 
-      - run: nix develop -c make udeps
+      - run: nix develop -c just udeps

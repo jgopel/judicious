@@ -52,7 +52,7 @@
         coreBuildInputs = [
           # Script tooling
           pkgs.git
-          pkgs.gnumake
+          pkgs.just
 
           # Python tooling
           python

@@ -19,14 +19,14 @@ development and quality checks.
 
 ## Common Tasks
 
-The project uses a `Makefile` to coordinate common tasks.
+The project uses a `justfile` to coordinate common tasks.
 
 ### Running Tests
 
 To run the full Rust test suite:
 
 ```sh
-make test
+just test
 # OR directly via cargo
 cargo test --all-targets --all-features
 ```
@@ -36,7 +36,7 @@ cargo test --all-targets --all-features
 To run all code quality checks (formatting, linting, etc.):
 
 ```sh
-make quality
+just quality
 ```
 
 This command executes `pre-commit` across all files via `uv`. It runs:
@@ -46,7 +46,7 @@ This command executes `pre-commit` across all files via `uv`. It runs:
   dependency check), and `cargo-sort`.
 
 **Note:** You do not need to install the git hooks locally to run these checks;
-`make quality` runs them on demand.
+`just quality` runs them on demand.
 
 ### Commit Messages
 
