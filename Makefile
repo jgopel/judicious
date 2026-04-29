@@ -15,4 +15,4 @@ check-all-features:
 
 .PHONY: udeps
 udeps:
-	RUSTFLAGS=-Awarnings cargo +nightly hack udeps --feature-powerset --all-targets
+	RUSTFLAGS=-Awarnings cargo-nightly hack udeps --feature-powerset --all-targets

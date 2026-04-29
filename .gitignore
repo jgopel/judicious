@@ -1,1 +1,8 @@
+# nix
+/.direnv/
+
+# python
+.venv
+
+# rust
 /target
