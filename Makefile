@@ -7,7 +7,7 @@ test:
 
 .PHONY: quality
 quality:
-	poetry run pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 .PHONY: check-all-features
 check-all-features:

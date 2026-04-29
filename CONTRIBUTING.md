@@ -7,14 +7,14 @@ development and quality checks.
 
 - Rust: [Install Rust](https://www.rust-lang.org/tools/install)
 - Python: [Install Python](https://www.python.org/downloads/)
-- Poetry: [Install Poetry](https://python-poetry.org/docs/#installation) (used
-  for managing dev dependencies)
+- uv: [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
+  (used for managing dev dependencies)
 
 ## Setup
 
 1. Install Python dependencies:
    ```sh
-   poetry sync
+   uv sync
    ```
 
 ## Common Tasks
@@ -39,7 +39,7 @@ To run all code quality checks (formatting, linting, etc.):
 make quality
 ```
 
-This command executes `pre-commit` across all files via `poetry`. It runs:
+This command executes `pre-commit` across all files via `uv`. It runs:
 
 - **General**: YAML/TOML checks, trailing whitespace, etc.
 - **Rust**: `cargo fmt`, `cargo check`, `cargo clippy`, `cargo machete` (unused

@@ -41,15 +41,16 @@ jobs:
         with:
           tool: cargo-hack,cargo-machete,cargo-udeps
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
       - name: Cache pre-commit environment
         uses: actions/cache@v4
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
-      - run: poetry check --lock
-      - run: poetry sync --no-interaction -vvv
+          key: pre-commit-3|${{ hashFiles('.pre-commit-config.yaml') }}
+      - run: uv sync --locked
 
       - run: make quality
       - run: make check-all-features

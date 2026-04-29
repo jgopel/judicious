@@ -1,6 +1,3 @@
-[tool.poetry]
-package-mode = false
-
 [project]
 name = "reasonable"
 version = "0.1.0"
@@ -17,8 +14,3 @@ dependencies = [
 dev = [
     "pre-commit"
 ]
-
-
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
