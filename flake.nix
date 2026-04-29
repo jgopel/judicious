@@ -64,6 +64,7 @@
           pkgs.cargo-hack
           pkgs.cargo-machete
           pkgs.cargo-nextest
+          pkgs.cargo-shear
           pkgs.cargo-udeps
         ];
 

@@ -46,6 +46,11 @@ repos:
         entry: bash -c 'cargo machete --fix'
         language: rust
         pass_filenames: false
+      - id: cargo-shear
+        name: cargo shear
+        entry: bash -c 'cargo shear --fix'
+        language: rust
+        pass_filenames: false
       - id: cargo-fmt
         name: cargo fmt
         entry: bash -c 'cargo fmt'
