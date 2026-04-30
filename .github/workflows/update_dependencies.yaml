@@ -45,8 +45,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1
-      - run: nix develop -c cargo upgrade  --incompatible  --recursive
-      - run: nix develop -c cargo update
+      - run: nix develop --ignore-env --command cargo upgrade  --incompatible  --recursive
+      - run: nix develop --ignore-env --command cargo update
 
       - uses: peter-evans/create-pull-request@v8
         with:

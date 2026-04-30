@@ -16,4 +16,4 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - run: nix develop -c cargo audit
+      - run: nix develop --ignore-env --command cargo audit

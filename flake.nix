@@ -36,8 +36,6 @@
           extensions = [
             "clippy"
             "rustfmt"
-            "rust-src"
-            "rust-analyzer"
           ];
         };
 
@@ -70,6 +68,18 @@
         ];
 
         commonShellHook = ''
+          if [ -z "$GOCACHE" ]; then
+            if [ -n "$XDG_CACHE_HOME" ]; then
+              cache_root="$XDG_CACHE_HOME"
+            elif [ -n "$TMPDIR" ]; then
+              cache_root="$TMPDIR/reasonable-cache-$(id -u)"
+            else
+              cache_root="/tmp/reasonable-cache-$(id -u)"
+            fi
+            export GOCACHE="$cache_root/go-build"
+          fi
+          mkdir -p "$GOCACHE"
+
           if [ -t 0 ]; then
             echo "reasonable dev shell"
             echo "Rust: $(rustc --version)"
