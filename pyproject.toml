@@ -2,15 +2,34 @@
 name = "reasonable"
 version = "0.1.0"
 description = "Reasonable rate limiter implemenation in Rust."
-authors = [
-    {name = "Jonathan Gopel",email = "jgopel@gmail.com"}
-]
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = [
+authors = [ { name = "Jonathan Gopel", email = "jgopel@gmail.com" } ]
+requires-python = ">=3.14"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
 ]
+dependencies = []
 
 [dependency-groups]
 dev = [
-    "pre-commit"
+  "pre-commit",
+  "requests",
+  "ruff",
+  "toml",
+  "ty",
 ]
+
+[tool.ruff]
+line-length = 88
+lint.select = [ "ALL" ]
+lint.ignore = [
+  "D103",
+  "D203",
+  "D212",
+  "E501",
+]
+
+[tool.ty]
+rules.all = "error"
+terminal.error-on-warning = true
