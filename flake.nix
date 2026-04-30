@@ -61,6 +61,7 @@
 
           # Rust tooling
           cargo-nightly
+          pkgs.cargo-audit
           pkgs.cargo-hack
           pkgs.cargo-machete
           pkgs.cargo-nextest
