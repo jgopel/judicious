@@ -15,7 +15,7 @@ jobs:
     name: Tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
@@ -28,14 +28,18 @@ jobs:
     name: Quality
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
       - run: nix flake check --no-update-lock-file
       - run: nix develop --ignore-env --command uv sync --locked
 
-      - run: nix develop --ignore-env --command just quality
+      - run: nix develop --ignore-env --keep-env-var BASE --command just quality
+        env:
+          BASE: origin/main
       - run: nix develop --ignore-env --command just check-all-features
 
       - run: nix develop --ignore-env --command just udeps

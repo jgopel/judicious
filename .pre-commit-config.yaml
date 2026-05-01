@@ -95,3 +95,15 @@ repos:
         entry: bash -c 'RUSTFLAGS="$RUSTFLAGS --deny warnings" cargo clippy --all-targets --all-features'
         language: rust
         pass_filenames: false
+
+  # Git
+  - repo: local
+    hooks:
+      - id: commitlint
+        name: commitlint
+        entry: ./scripts/lint-commits.sh
+        language: node
+        additional_dependencies:
+          - "@commitlint/cli@20.4.4"
+        always_run: true
+        pass_filenames: false
