@@ -10,7 +10,7 @@ repository = "https://github.com/jgopel/judicious"
 readme = "README.md"
 keywords = ["rate-limit", "cooldown", "concurrency"]
 categories = ["library"]
-include = ["src/**/*.rs", "README.md", "LICENSE"]
+include = ["src/**/*.rs", "/README.md", "/LICENSE"]
 
 [features]
 tokio = ["dep:tokio"]

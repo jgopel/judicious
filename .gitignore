@@ -2,7 +2,7 @@
 /.direnv/
 
 # python
-.venv
+/.venv/
 
 # rust
 /target
