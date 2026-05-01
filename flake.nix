@@ -1,5 +1,5 @@
 {
-  description = "Minimal build environment for reasonable";
+  description = "Build environment for judicious";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -72,16 +72,16 @@
             if [ -n "$XDG_CACHE_HOME" ]; then
               cache_root="$XDG_CACHE_HOME"
             elif [ -n "$TMPDIR" ]; then
-              cache_root="$TMPDIR/reasonable-cache-$(id -u)"
+              cache_root="$TMPDIR/judicious-cache-$(id -u)"
             else
-              cache_root="/tmp/reasonable-cache-$(id -u)"
+              cache_root="/tmp/judicious-cache-$(id -u)"
             fi
             export GOCACHE="$cache_root/go-build"
           fi
           mkdir -p "$GOCACHE"
 
           if [ -t 0 ]; then
-            echo "reasonable dev shell"
+            echo "judicious dev shell"
             echo "Rust: $(rustc --version)"
             echo "Python: $(python3 --version)"
             echo "uv: $(uv --version)"

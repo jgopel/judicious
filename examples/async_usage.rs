@@ -3,7 +3,7 @@
 //! This example demonstrates how to use the rate limiter to control access to a shared resource
 //! where the "cost" (cooldown) is applied after the work is done.
 
-use reasonable::RateLimiter as _;
+use judicious::RateLimiter as _;
 
 const DEFAULT_SLEEP: std::time::Duration = std::time::Duration::from_millis(100);
 
@@ -12,7 +12,7 @@ async fn main() {
     // Create a limiter allowing 1 concurrent operation.
     // Once an operation finishes, that slot is unavailable for 1 second.
     let limiter =
-        reasonable::trailing_edge::UnfairRateLimiter::<1>::new(chrono::Duration::seconds(1));
+        judicious::trailing_edge::UnfairRateLimiter::<1>::new(chrono::Duration::seconds(1));
 
     println!("--- Starting Async Example ---");
 
@@ -33,7 +33,7 @@ async fn main() {
     println!("Trying to re-acquire immediately (should fail)...");
     match limiter.try_acquire_permit() {
         Ok(_) => println!("Unexpectedly acquired permit!"),
-        Err(reasonable::trailing_edge::Error::NoPermitAvailable(maybe_next_time)) => {
+        Err(judicious::trailing_edge::Error::NoPermitAvailable(maybe_next_time)) => {
             if let Some(next_time) = maybe_next_time {
                 println!("Failed as expected. Next permit available at: {next_time}");
 

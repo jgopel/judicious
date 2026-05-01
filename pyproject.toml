@@ -1,7 +1,7 @@
 [project]
-name = "reasonable"
+name = "judicious"
 version = "0.1.0"
-description = "Reasonable rate limiter implemenation in Rust."
+description = "Judicious rate limiter implemenation in Rust."
 readme = "README.md"
 authors = [ { name = "Jonathan Gopel", email = "jgopel@gmail.com" } ]
 requires-python = ">=3.14"

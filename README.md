@@ -1,9 +1,9 @@
-# Reasonable
+# Judicious
 
-`reasonable` is a Rust library that implements rate limiting based on event
+`judicious` is a Rust library that implements rate limiting based on event
 completion time instead of event start time. Unlike standard rate limiters (like
 token buckets or leaky buckets) which enforce limits based on when a permit is
-*acquired*, `reasonable` enforces a cooldown period starting from when a permit
+*acquired*, `judicious` enforces a cooldown period starting from when a permit
 is returned (dropped).
 
 ## Installation
@@ -12,7 +12,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-reasonable = "0.1.0"
+judicious = "0.1.0"
 ```
 
 ## Usage
@@ -22,7 +22,7 @@ future plans for adding a fair rate limiter.
 
 ```rust
 use chrono::Duration;
-use reasonable::{trailing_edge::UnfairRateLimiter, RateLimiter as _};
+use judicious::{trailing_edge::UnfairRateLimiter, RateLimiter as _};
 
 #[tokio::main]
 async fn main() {
