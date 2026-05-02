@@ -1,24 +1,35 @@
-[tool.poetry]
-package-mode = false
-
 [project]
-name = "reasonable"
+name = "judicious"
 version = "0.1.0"
-description = "Reasonable rate limiter implemenation in Rust."
-authors = [
-    {name = "Jonathan Gopel",email = "jgopel@gmail.com"}
-]
+description = "Judicious rate limiter implemenation in Rust."
 readme = "README.md"
-requires-python = ">=3.12"
-dependencies = [
+authors = [ { name = "Jonathan Gopel", email = "jgopel@gmail.com" } ]
+requires-python = ">=3.14"
+classifiers = [
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.14",
 ]
+dependencies = []
 
 [dependency-groups]
 dev = [
-    "pre-commit"
+  "pre-commit",
+  "requests",
+  "ruff",
+  "toml",
+  "ty",
 ]
 
+[tool.ruff]
+line-length = 88
+lint.select = [ "ALL" ]
+lint.ignore = [
+  "D103",
+  "D203",
+  "D212",
+  "E501",
+]
 
-[build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.ty]
+rules.all = "error"
+terminal.error-on-warning = true
