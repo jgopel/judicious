@@ -9,7 +9,7 @@ homepage = "https://github.com/jgopel/judicious"
 repository = "https://github.com/jgopel/judicious"
 readme = "README.md"
 keywords = ["rate-limit", "cooldown", "concurrency"]
-categories = ["library"]
+categories = ["asynchronous", "rust-patterns"]
 include = ["src/**/*.rs", "/README.md", "/LICENSE"]
 
 [features]
