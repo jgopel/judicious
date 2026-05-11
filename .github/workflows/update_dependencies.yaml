@@ -10,6 +10,10 @@ jobs:
   update-dependencies:
     runs-on: ubuntu-latest
     timeout-minutes: 25
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
     steps:
       - uses: actions/checkout@v6
       - name: Store current date
