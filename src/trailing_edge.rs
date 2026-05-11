@@ -1,9 +1,9 @@
 /// Errors that can occur when interacting with the [`UnfairRateLimiter`].
 #[derive(Debug, thiserror::Error)]
-pub enum Error<T> {
+pub enum Error {
     /// The internal mutex was poisoned.
     #[error("Mutex poisoned")]
-    MutexPoisoned(#[from] std::sync::PoisonError<T>),
+    MutexPoisoned,
     /// A permit cannot currently be acquired because the limit has been reached.
     ///
     /// Contains the time when the next permit might become available, if known.
@@ -23,10 +23,12 @@ pub struct SinglePermit<'a, const MAX_SIMULTANEOUS: usize> {
 }
 
 impl<'a, const MAX_SIMULTANEOUS: usize> SinglePermit<'a, MAX_SIMULTANEOUS> {
-    fn new(
-        parent_rate_limiter: &'a UnfairRateLimiter<MAX_SIMULTANEOUS>,
-    ) -> Result<Self, Error<std::sync::MutexGuard<'a, State>>> {
-        parent_rate_limiter.state.lock()?.active_connection_count += 1;
+    fn new(parent_rate_limiter: &'a UnfairRateLimiter<MAX_SIMULTANEOUS>) -> Result<Self, Error> {
+        parent_rate_limiter
+            .state
+            .lock()
+            .map_err(|_error| Error::MutexPoisoned)?
+            .active_connection_count += 1;
         Ok(Self {
             parent_rate_limiter,
         })
@@ -66,8 +68,12 @@ impl<'a, const MAX_SIMULTANEOUS: usize> MultiPermit<'a, MAX_SIMULTANEOUS> {
     fn new(
         parent_rate_limiter: &'a UnfairRateLimiter<MAX_SIMULTANEOUS>,
         num_permits: usize,
-    ) -> Result<Self, Error<std::sync::MutexGuard<'a, State>>> {
-        parent_rate_limiter.state.lock()?.active_connection_count += num_permits;
+    ) -> Result<Self, Error> {
+        parent_rate_limiter
+            .state
+            .lock()
+            .map_err(|_error| Error::MutexPoisoned)?
+            .active_connection_count += num_permits;
         Ok(Self {
             parent_rate_limiter,
             num_permits,
@@ -169,9 +175,9 @@ impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
     fn try_acquire_permit_impl(
         &self,
         for_time: &chrono::NaiveDateTime,
-    ) -> Result<SinglePermit<'_, MAX_SIMULTANEOUS>, Error<std::sync::MutexGuard<'_, State>>> {
+    ) -> Result<SinglePermit<'_, MAX_SIMULTANEOUS>, Error> {
         tracing::debug!("Trying to acquire permit for {for_time}");
-        let mut state = self.state.lock()?;
+        let mut state = self.state.lock().map_err(|_error| Error::MutexPoisoned)?;
         tracing::trace!("{for_time} - lock acquired");
 
         debug_assert!(state.active_connection_count <= MAX_SIMULTANEOUS);
@@ -206,12 +212,12 @@ impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
         &self,
         for_time: &chrono::NaiveDateTime,
         num_permits: usize,
-    ) -> Result<MultiPermit<'_, MAX_SIMULTANEOUS>, Error<std::sync::MutexGuard<'_, State>>> {
+    ) -> Result<MultiPermit<'_, MAX_SIMULTANEOUS>, Error> {
         debug_assert!(num_permits > 0);
         debug_assert!(num_permits <= MAX_SIMULTANEOUS);
 
         tracing::debug!("Trying to acquire {num_permits} permits for {for_time}");
-        let mut state = self.state.lock()?;
+        let mut state = self.state.lock().map_err(|_error| Error::MutexPoisoned)?;
         tracing::trace!("{for_time} - lock acquired");
 
         Self::remove_old_expiries(&mut state.expiry_times, for_time, &self.interval);
@@ -255,7 +261,7 @@ impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
 impl<const MAX_SIMULTANEOUS: usize> super::RateLimiter for UnfairRateLimiter<MAX_SIMULTANEOUS> {
     type SinglePermit<'a> = SinglePermit<'a, MAX_SIMULTANEOUS>;
     type MultiPermit<'a> = MultiPermit<'a, MAX_SIMULTANEOUS>;
-    type Error<'a> = Error<std::sync::MutexGuard<'a, State>>;
+    type Error = Error;
 
     /// Attempts to acquire a single permit.
     ///
@@ -265,7 +271,7 @@ impl<const MAX_SIMULTANEOUS: usize> super::RateLimiter for UnfairRateLimiter<MAX
     ///
     /// Returns [`Error::NoPermitAvailable`] if all slots are occupied (either by active permits or by cooldowns from recently dropped permits).
     /// Returns [`Error::MutexPoisoned`] if the internal state mutex is poisoned.
-    fn try_acquire_permit(&self) -> Result<Self::SinglePermit<'_>, Self::Error<'_>> {
+    fn try_acquire_permit(&self) -> Result<Self::SinglePermit<'_>, Self::Error> {
         self.try_acquire_permit_impl(&chrono::Utc::now().naive_utc())
     }
 
@@ -280,23 +286,23 @@ impl<const MAX_SIMULTANEOUS: usize> super::RateLimiter for UnfairRateLimiter<MAX
     fn try_acquire_permits(
         &self,
         num_permits: usize,
-    ) -> Result<Self::MultiPermit<'_>, Self::Error<'_>> {
+    ) -> Result<Self::MultiPermit<'_>, Self::Error> {
         self.try_acquire_permits_impl(&chrono::Utc::now().naive_utc(), num_permits)
     }
 }
 
 #[cfg(feature = "tokio")]
 impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
-    async fn retry_until_acquired<'a, TReturn>(
+    async fn retry_until_acquired<TReturn>(
         &self,
-        mut acquire_fn: impl FnMut() -> Result<TReturn, Error<std::sync::MutexGuard<'a, State>>>,
+        mut acquire_fn: impl FnMut() -> Result<TReturn, Error> + Send,
     ) -> TReturn {
         loop {
             let result = acquire_fn();
             let next_time = match result {
                 Ok(permit) => return permit,
                 Err(Error::NoPermitAvailable(next_time)) => next_time,
-                Err(Error::MutexPoisoned(_)) => panic!("Internal mutex is poisoned"),
+                Err(Error::MutexPoisoned) => panic!("Internal mutex is poisoned"),
             };
             let wait_time =
                 next_time.map_or(self.interval, |wake_time| wake_time - chrono::Utc::now());
@@ -323,7 +329,7 @@ impl<const MAX_SIMULTANEOUS: usize> super::AsyncRateLimiter
     /// # Panics
     ///
     /// Panics if the internal mutex is poisoned.
-    fn acquire_permit(&self) -> impl Future<Output = Self::SinglePermit<'_>> {
+    fn acquire_permit(&self) -> impl Future<Output = Self::SinglePermit<'_>> + Send {
         use super::RateLimiter;
 
         self.retry_until_acquired(move || self.try_acquire_permit())
@@ -336,7 +342,10 @@ impl<const MAX_SIMULTANEOUS: usize> super::AsyncRateLimiter
     /// # Panics
     ///
     /// Panics if the internal mutex is poisoned.
-    fn acquire_permits(&self, num_permits: usize) -> impl Future<Output = Self::MultiPermit<'_>> {
+    fn acquire_permits(
+        &self,
+        num_permits: usize,
+    ) -> impl Future<Output = Self::MultiPermit<'_>> + Send {
         use super::RateLimiter;
 
         self.retry_until_acquired(move || self.try_acquire_permits(num_permits))
