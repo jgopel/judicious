@@ -32,7 +32,7 @@ cargo update --package judicious
 cargo publish --dry-run --allow-dirty
 
 git add Cargo.toml Cargo.lock
-git commit --message ":bookmark: Release ${new_version}"
+git commit --message ":bookmark: Release ${new_version}" --message "[skip ci]"
 
 git push "${remote}" HEAD:main
 
