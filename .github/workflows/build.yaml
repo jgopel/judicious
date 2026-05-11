@@ -1,15 +1,18 @@
-name: Security Audit
+name: Build
 
 on:
   workflow_call:
 
+env:
+  RUST_BACKTRACE: 1
+
 jobs:
-  cargo-audit:
-    name: Cargo Audit
+  build:
+    name: Build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - run: nix develop --ignore-env --command cargo audit
+      - run: nix develop --ignore-env --command cargo build --all-targets --all-features

@@ -1,29 +1,9 @@
-name: Quality and tests
+name: Quality
 
 on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-  workflow_dispatch:
-
-env:
-  RUST_BACKTRACE: 1
+  workflow_call:
 
 jobs:
-  test:
-    name: Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
-
-      - name: Build
-        run: nix develop --ignore-env --command cargo build --all-targets --all-features
-      - name: Run tests
-        run: nix develop --ignore-env --command cargo test --all-targets --all-features
-
   quality:
     name: Quality
     runs-on: ubuntu-latest
