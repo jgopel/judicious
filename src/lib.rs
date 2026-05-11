@@ -28,33 +28,32 @@ pub trait RateLimiter {
         Self: 'a;
 
     /// The error type returned when a permit cannot be acquired.
-    type Error<'a>
-    where
-        Self: 'a;
+    type Error;
 
     /// Attempts to acquire a single permit.
     ///
     /// # Errors
     ///
     /// Returns an error if a permit cannot be acquired.
-    fn try_acquire_permit(&self) -> Result<Self::SinglePermit<'_>, Self::Error<'_>>;
+    fn try_acquire_permit(&self) -> Result<Self::SinglePermit<'_>, Self::Error>;
 
     /// Attempts to acquire multiple permits at once.
     ///
     /// # Errors
     ///
     /// Returns an error if the requested number of permits cannot be acquired.
-    fn try_acquire_permits(
-        &self,
-        num_permits: usize,
-    ) -> Result<Self::MultiPermit<'_>, Self::Error<'_>>;
+    fn try_acquire_permits(&self, num_permits: usize)
+    -> Result<Self::MultiPermit<'_>, Self::Error>;
 }
 
 /// An async-capable rate limiter.
 pub trait AsyncRateLimiter: RateLimiter {
     /// Asynchronously acquires a single permit.
-    fn acquire_permit(&self) -> impl Future<Output = Self::SinglePermit<'_>>;
+    fn acquire_permit(&self) -> impl Future<Output = Self::SinglePermit<'_>> + Send;
 
     /// Asynchronously acquires the requested number of permits.
-    fn acquire_permits(&self, num_permits: usize) -> impl Future<Output = Self::MultiPermit<'_>>;
+    fn acquire_permits(
+        &self,
+        num_permits: usize,
+    ) -> impl Future<Output = Self::MultiPermit<'_>> + Send;
 }
