@@ -3,17 +3,8 @@
 `judicious` is a Rust library that implements rate limiting based on event
 completion time instead of event start time. Unlike standard rate limiters (like
 token buckets or leaky buckets) which enforce limits based on when a permit is
-*acquired*, `judicious` enforces a cooldown period starting from when a permit
+_acquired_, `judicious` enforces a cooldown period starting from when a permit
 is returned (dropped).
-
-## Installation
-
-Add this to your `Cargo.toml`:
-
-```toml
-[dependencies]
-judicious = "0.1.0"
-```
 
 ## Usage
 
