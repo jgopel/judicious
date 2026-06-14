@@ -55,7 +55,7 @@
           # Python tooling
           python
           pkgs.uv
-          pkgs.pre-commit
+          pkgs.prek
 
           # Rust tooling
           cargo-nightly

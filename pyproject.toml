@@ -13,7 +13,6 @@ dependencies = []
 
 [dependency-groups]
 dev = [
-  "pre-commit",
   "requests",
   "ruff",
   "toml",
