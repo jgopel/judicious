@@ -1,4 +1,4 @@
-//! Example usage of the `UnfairRateLimiter` in an async context.
+//! Example usage of the `trailing_edge::RateLimiter` in an async context.
 //!
 //! This example demonstrates how to use the rate limiter to control access to a shared resource
 //! where the "cost" (cooldown) is applied after the work is done.
@@ -13,8 +13,7 @@ const DEFAULT_SLEEP: std::time::Duration = std::time::Duration::from_millis(100)
 async fn main() {
     // Create a limiter allowing 1 concurrent operation.
     // Once an operation finishes, that slot is unavailable for 1 second.
-    let limiter =
-        judicious::trailing_edge::UnfairRateLimiter::<1>::new(chrono::Duration::seconds(1));
+    let limiter = judicious::trailing_edge::RateLimiter::<1>::new(chrono::Duration::seconds(1));
 
     println!("--- Starting Async Example ---");
 

@@ -1,4 +1,4 @@
-/// Errors that can occur when interacting with the [`UnfairRateLimiter`].
+/// Errors that can occur when interacting with the [`RateLimiter`].
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     /// The internal mutex was poisoned.
@@ -19,11 +19,11 @@ pub enum Error {
 #[derive(Debug)]
 #[must_use]
 pub struct SinglePermit<'a, const MAX_SIMULTANEOUS: usize> {
-    parent_rate_limiter: &'a UnfairRateLimiter<MAX_SIMULTANEOUS>,
+    parent_rate_limiter: &'a RateLimiter<MAX_SIMULTANEOUS>,
 }
 
 impl<'a, const MAX_SIMULTANEOUS: usize> SinglePermit<'a, MAX_SIMULTANEOUS> {
-    fn new(parent_rate_limiter: &'a UnfairRateLimiter<MAX_SIMULTANEOUS>) -> Result<Self, Error> {
+    fn new(parent_rate_limiter: &'a RateLimiter<MAX_SIMULTANEOUS>) -> Result<Self, Error> {
         parent_rate_limiter
             .state
             .lock()
@@ -60,13 +60,13 @@ impl<const MAX_SIMULTANEOUS: usize> Drop for SinglePermit<'_, MAX_SIMULTANEOUS> 
 #[derive(Debug)]
 #[must_use]
 pub struct MultiPermit<'a, const MAX_SIMULTANEOUS: usize> {
-    parent_rate_limiter: &'a UnfairRateLimiter<MAX_SIMULTANEOUS>,
+    parent_rate_limiter: &'a RateLimiter<MAX_SIMULTANEOUS>,
     num_permits: usize,
 }
 
 impl<'a, const MAX_SIMULTANEOUS: usize> MultiPermit<'a, MAX_SIMULTANEOUS> {
     fn new(
-        parent_rate_limiter: &'a UnfairRateLimiter<MAX_SIMULTANEOUS>,
+        parent_rate_limiter: &'a RateLimiter<MAX_SIMULTANEOUS>,
         num_permits: usize,
     ) -> Result<Self, Error> {
         parent_rate_limiter
@@ -122,12 +122,12 @@ pub struct State {
 /// This implies that long-running tasks holding a permit will delay the availability
 /// of that slot for future tasks until `duration_held + interval` time has passed.
 #[derive(Debug)]
-pub struct UnfairRateLimiter<const MAX_SIMULTANEOUS: usize> {
+pub struct RateLimiter<const MAX_SIMULTANEOUS: usize> {
     interval: chrono::Duration,
     state: std::sync::Mutex<State>,
 }
 
-impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
+impl<const MAX_SIMULTANEOUS: usize> RateLimiter<MAX_SIMULTANEOUS> {
     /// Creates a new rate limiter with the specified cooldown `interval`.
     ///
     /// The `interval` specifies how long a slot remains unavailable *after* a permit is dropped.
@@ -258,7 +258,7 @@ impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
     }
 }
 
-impl<const MAX_SIMULTANEOUS: usize> super::RateLimiter for UnfairRateLimiter<MAX_SIMULTANEOUS> {
+impl<const MAX_SIMULTANEOUS: usize> crate::RateLimiter for RateLimiter<MAX_SIMULTANEOUS> {
     type SinglePermit<'a> = SinglePermit<'a, MAX_SIMULTANEOUS>;
     type MultiPermit<'a> = MultiPermit<'a, MAX_SIMULTANEOUS>;
     type Error = Error;
@@ -296,7 +296,7 @@ impl<const MAX_SIMULTANEOUS: usize> super::RateLimiter for UnfairRateLimiter<MAX
     clippy::multiple_inherent_impl,
     reason = "this one is just for when tokio is enabled"
 )]
-impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
+impl<const MAX_SIMULTANEOUS: usize> RateLimiter<MAX_SIMULTANEOUS> {
     async fn retry_until_acquired<TReturn>(
         &self,
         mut acquire_fn: impl FnMut() -> Result<TReturn, Error> + Send,
@@ -324,9 +324,7 @@ impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
 }
 
 #[cfg(feature = "tokio")]
-impl<const MAX_SIMULTANEOUS: usize> super::AsyncRateLimiter
-    for UnfairRateLimiter<MAX_SIMULTANEOUS>
-{
+impl<const MAX_SIMULTANEOUS: usize> crate::AsyncRateLimiter for RateLimiter<MAX_SIMULTANEOUS> {
     /// Asynchronously acquires a single permit.
     ///
     /// Waits until a slot is available if the rate limit has been reached.
@@ -335,7 +333,7 @@ impl<const MAX_SIMULTANEOUS: usize> super::AsyncRateLimiter
     ///
     /// Panics if the internal mutex is poisoned.
     fn acquire_permit(&self) -> impl Future<Output = Self::SinglePermit<'_>> + Send {
-        use super::RateLimiter as _;
+        use crate::RateLimiter as _;
 
         self.retry_until_acquired(move || self.try_acquire_permit())
     }
@@ -351,7 +349,7 @@ impl<const MAX_SIMULTANEOUS: usize> super::AsyncRateLimiter
         &self,
         num_permits: usize,
     ) -> impl Future<Output = Self::MultiPermit<'_>> + Send {
-        use super::RateLimiter as _;
+        use crate::RateLimiter as _;
 
         self.retry_until_acquired(move || self.try_acquire_permits(num_permits))
     }
@@ -371,7 +369,7 @@ mod tests {
 
     #[test]
     fn can_acquire_permit_immediately_after_normal_construction() {
-        let rate_limiter = UnfairRateLimiter::<42>::new(chrono::Duration::seconds(43));
+        let rate_limiter = RateLimiter::<42>::new(chrono::Duration::seconds(43));
 
         let _permit = rate_limiter
             .try_acquire_permit_impl(&dt_from_str("2022-01-02 03:04:05Z"))
@@ -382,7 +380,7 @@ mod tests {
     fn cannot_acquire_permit_immediately_after_exhausted_construction() {
         let start_time = dt_from_str("2022-01-02 03:04:05Z");
         let interval = chrono::Duration::seconds(43);
-        let rate_limiter = UnfairRateLimiter::<42>::new_exhausted_impl(interval, start_time);
+        let rate_limiter = RateLimiter::<42>::new_exhausted_impl(interval, start_time);
 
         let result = rate_limiter.try_acquire_permit_impl(&start_time);
 
@@ -406,7 +404,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<42> {
+            let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -431,7 +429,7 @@ mod tests {
                 active_connection_count: CONNECTION_COUNT - 1,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<CONNECTION_COUNT> {
+            let rate_limiter = RateLimiter::<CONNECTION_COUNT> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -462,7 +460,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<5> {
+            let rate_limiter = RateLimiter::<5> {
                 interval: chrono::Duration::seconds(5),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -492,7 +490,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<6> {
+            let rate_limiter = RateLimiter::<6> {
                 interval: chrono::Duration::seconds(5),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -517,7 +515,7 @@ mod tests {
                 active_connection_count: CONNECTION_COUNT,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<CONNECTION_COUNT> {
+            let rate_limiter = RateLimiter::<CONNECTION_COUNT> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -548,7 +546,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<2> {
+            let rate_limiter = RateLimiter::<2> {
                 interval: chrono::Duration::seconds(5),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -586,7 +584,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<5> {
+            let rate_limiter = RateLimiter::<5> {
                 interval: chrono::Duration::seconds(5),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -624,7 +622,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<5> {
+            let rate_limiter = RateLimiter::<5> {
                 interval: chrono::Duration::seconds(5),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -659,7 +657,7 @@ mod tests {
                 active_connection_count: 8,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<10> {
+            let rate_limiter = RateLimiter::<10> {
                 interval: chrono::Duration::seconds(5),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -689,7 +687,7 @@ mod tests {
                 active_connection_count: 1,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<42> {
+            let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -731,7 +729,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<42> {
+            let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -758,7 +756,7 @@ mod tests {
                 active_connection_count: CAPACITY - REQUESTED,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -782,7 +780,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<42> {
+            let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -817,7 +815,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -843,7 +841,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -869,7 +867,7 @@ mod tests {
                 active_connection_count: CAPACITY,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -899,7 +897,7 @@ mod tests {
                 active_connection_count: CAPACITY - 1,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -929,7 +927,7 @@ mod tests {
                 active_connection_count: CAPACITY - 4,
                 expiry_times: std::collections::VecDeque::default(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -972,7 +970,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(15),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -1017,7 +1015,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(15),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -1060,7 +1058,7 @@ mod tests {
                 active_connection_count: 0,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(15),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -1100,7 +1098,7 @@ mod tests {
                 active_connection_count: 5,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<CAPACITY> {
+            let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(15),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -1137,7 +1135,7 @@ mod tests {
                 active_connection_count: 5,
                 expiry_times: initial_expiry_times.clone(),
             };
-            let rate_limiter = UnfairRateLimiter::<42> {
+            let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
                 state: std::sync::Mutex::new(initial_state),
             };
@@ -1182,7 +1180,7 @@ mod tests {
         #[tokio::test]
         async fn permit_already_available() {
             let interval = chrono::Duration::milliseconds(100);
-            let limiter = UnfairRateLimiter::<1>::new(interval);
+            let limiter = RateLimiter::<1>::new(interval);
 
             let start = chrono::Utc::now();
             let _permit = limiter.acquire_permit().await;
@@ -1194,7 +1192,7 @@ mod tests {
         #[tokio::test]
         async fn single_permit_cooldown() {
             let interval = chrono::Duration::milliseconds(100);
-            let limiter = UnfairRateLimiter::<1>::new(interval);
+            let limiter = RateLimiter::<1>::new(interval);
 
             let previous_permit = limiter.try_acquire_permit().unwrap();
             drop(previous_permit);
@@ -1210,7 +1208,7 @@ mod tests {
         #[tokio::test]
         async fn multi_permit_cooldown() {
             let interval = chrono::Duration::milliseconds(100);
-            let limiter = UnfairRateLimiter::<3>::new(interval);
+            let limiter = RateLimiter::<3>::new(interval);
 
             let previous_permit = limiter.try_acquire_permits(3).unwrap();
             drop(previous_permit);

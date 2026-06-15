@@ -3,7 +3,7 @@
 //! `judicious` provides a rate-limiting mechanism that enforces a cooldown period after a resource
 //! has been used.
 //!
-//! The main type is [`trailing_edge::UnfairRateLimiter`], which limits the number of simultaneous
+//! The main type is [`trailing_edge::RateLimiter`], which limits the number of simultaneous
 //! "permits". Unlike a standard semaphore or token bucket, `judicious` is designed for scenarios
 //! where the cooldown should depend on when the resource is *released* (returned), not when it was
 //! acquired.
