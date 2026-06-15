@@ -1,14 +1,14 @@
-impl super::mutex_common::PermitState for &std::sync::Mutex<State> {
+impl super::mutex_common::PermitState for std::sync::Arc<std::sync::Mutex<State>> {
     fn lock_permit_state(&self) -> std::sync::MutexGuard<'_, State> {
         self.lock().expect("This should never fail")
     }
 }
 
-impl super::mutex_common::StateStore for std::sync::Mutex<State> {
-    type PermitState<'a> = &'a std::sync::Mutex<State>;
+impl super::mutex_common::StateStore for std::sync::Arc<std::sync::Mutex<State>> {
+    type PermitState<'a> = std::sync::Arc<std::sync::Mutex<State>>;
 
     fn from_state(state: State) -> Self {
-        Self::new(state)
+        Self::new(std::sync::Mutex::new(state))
     }
 
     fn lock_state(&self) -> Result<std::sync::MutexGuard<'_, State>, Error> {
@@ -16,7 +16,7 @@ impl super::mutex_common::StateStore for std::sync::Mutex<State> {
     }
 
     fn permit_state(&self) -> Self::PermitState<'_> {
-        self
+        Self::clone(self)
     }
 }
 
@@ -31,14 +31,20 @@ pub type State = super::mutex_common::State;
 /// When this value is dropped (returned), the permit is released, but the "slot" it occupied
 /// remains unavailable for the configured `interval` of the rate limiter. This means the
 /// cooldown period starts at the moment the permit is dropped, not when it was created.
-pub type SinglePermit<'a> = super::mutex_common::SinglePermit<&'a std::sync::Mutex<State>>;
+///
+/// The permit holds an [`Arc`](std::sync::Arc) to the shared state of the rate limiter, so it does
+/// not borrow the [`RateLimiter`] it came from and can outlive any reference to it.
+pub type SinglePermit = super::mutex_common::SinglePermit<std::sync::Arc<std::sync::Mutex<State>>>;
 
 /// A RAII permit for multiple units of concurrency.
 ///
 /// When this value is dropped (returned), the permits are released, but the "slots" they occupied
 /// remain unavailable for the configured `interval` of the rate limiter. This means the
 /// cooldown period starts at the moment the permits are dropped.
-pub type MultiPermit<'a> = super::mutex_common::MultiPermit<&'a std::sync::Mutex<State>>;
+///
+/// The permit holds an [`Arc`](std::sync::Arc) to the shared state of the rate limiter, so it does
+/// not borrow the [`RateLimiter`] it came from and can outlive any reference to it.
+pub type MultiPermit = super::mutex_common::MultiPermit<std::sync::Arc<std::sync::Mutex<State>>>;
 
 /// A rate limiter that enforces a cooldown period after usage (return-time based).
 ///
@@ -49,7 +55,7 @@ pub type MultiPermit<'a> = super::mutex_common::MultiPermit<&'a std::sync::Mutex
 /// This implies that long-running tasks holding a permit will delay the availability
 /// of that slot for future tasks until `duration_held + interval` time has passed.
 pub type RateLimiter<const MAX_SIMULTANEOUS: usize> =
-    super::mutex_common::RateLimiter<MAX_SIMULTANEOUS, std::sync::Mutex<State>>;
+    super::mutex_common::RateLimiter<MAX_SIMULTANEOUS, std::sync::Arc<std::sync::Mutex<State>>>;
 
 #[cfg(test)]
 mod tests {
@@ -89,6 +95,32 @@ mod tests {
         );
     }
 
+    #[test]
+    fn permit_can_be_held_while_owner_is_used_mutably() {
+        use crate::RateLimiter as _;
+
+        struct Writer {
+            rate_limiter: RateLimiter<1>,
+            messages_sent: usize,
+        }
+
+        impl Writer {
+            fn send(&mut self, _permit: SinglePermit) {
+                self.messages_sent += 1;
+            }
+        }
+
+        let mut writer = Writer {
+            rate_limiter: RateLimiter::new(chrono::Duration::milliseconds(100)),
+            messages_sent: 0,
+        };
+
+        let permit = writer.rate_limiter.try_acquire_permit().unwrap();
+        writer.send(permit);
+
+        assert_eq!(writer.messages_sent, 1);
+    }
+
     mod single_permit {
         use pretty_assertions::assert_eq;
 
@@ -102,7 +134,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let _permit = rate_limiter
@@ -127,7 +159,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CONNECTION_COUNT> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let _permit = rate_limiter
@@ -158,7 +190,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<5> {
                 interval: chrono::Duration::seconds(5),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let _permit = rate_limiter.try_acquire_permit_impl(&current_time).unwrap();
@@ -188,7 +220,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<6> {
                 interval: chrono::Duration::seconds(5),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let _permit = rate_limiter
@@ -213,7 +245,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CONNECTION_COUNT> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result = rate_limiter.try_acquire_permit_impl(&dt_from_str("2022-01-02 03:04:05Z"));
@@ -244,7 +276,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<2> {
                 interval: chrono::Duration::seconds(5),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result = rate_limiter.try_acquire_permit_impl(&dt_from_str("2022-01-02 03:04:05Z"));
@@ -282,7 +314,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<5> {
                 interval: chrono::Duration::seconds(5),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result = rate_limiter.try_acquire_permit_impl(&current_time);
@@ -320,7 +352,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<5> {
                 interval: chrono::Duration::seconds(5),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result = rate_limiter.try_acquire_permit_impl(&current_time);
@@ -355,7 +387,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<10> {
                 interval: chrono::Duration::seconds(5),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result = rate_limiter.try_acquire_permit_impl(&dt_from_str("2022-01-02 03:04:05Z"));
@@ -385,7 +417,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let mut permit = rate_limiter
@@ -427,7 +459,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let _permit = rate_limiter
@@ -454,7 +486,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let _permit = rate_limiter
@@ -478,7 +510,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let _permit = rate_limiter
@@ -513,7 +545,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let _permit = rate_limiter
@@ -539,7 +571,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let _permit = rate_limiter
@@ -565,7 +597,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result =
@@ -595,7 +627,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result =
@@ -625,7 +657,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result =
@@ -668,7 +700,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(15),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result =
@@ -713,7 +745,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(15),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result =
@@ -756,7 +788,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(15),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result =
@@ -796,7 +828,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<CAPACITY> {
                 interval: chrono::Duration::seconds(15),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
 
             let result =
@@ -833,7 +865,7 @@ mod tests {
             };
             let rate_limiter = RateLimiter::<42> {
                 interval: chrono::Duration::seconds(43),
-                state: std::sync::Mutex::new(initial_state),
+                state: std::sync::Arc::new(std::sync::Mutex::new(initial_state)),
             };
             let mut permit = rate_limiter
                 .try_acquire_permits_impl(&dt_from_str("2022-01-01 12:00:00Z"), 3)
