@@ -167,7 +167,7 @@ impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
     ) -> usize {
         let partition_point = expiry_times.partition_point(|time| *time < (*for_time - *interval));
         for _ in 0..partition_point {
-            let _ = expiry_times.pop_front();
+            let _: Option<chrono::NaiveDateTime> = expiry_times.pop_front();
         }
         partition_point
     }
@@ -247,7 +247,7 @@ impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
                 .expiry_times
                 .get(num_permits - 1)
                 .or(state.expiry_times.back())
-                .map(|t| t.and_utc() + self.interval);
+                .map(|time| time.and_utc() + self.interval);
 
             return Err(Error::NoPermitAvailable(next_time));
         }
@@ -292,6 +292,10 @@ impl<const MAX_SIMULTANEOUS: usize> super::RateLimiter for UnfairRateLimiter<MAX
 }
 
 #[cfg(feature = "tokio")]
+#[expect(
+    clippy::multiple_inherent_impl,
+    reason = "this one is just for when tokio is enabled"
+)]
 impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
     async fn retry_until_acquired<TReturn>(
         &self,
@@ -302,6 +306,7 @@ impl<const MAX_SIMULTANEOUS: usize> UnfairRateLimiter<MAX_SIMULTANEOUS> {
             let next_time = match result {
                 Ok(permit) => return permit,
                 Err(Error::NoPermitAvailable(next_time)) => next_time,
+                #[expect(clippy::panic, reason = "mutex should never be poisoned")]
                 Err(Error::MutexPoisoned) => panic!("Internal mutex is poisoned"),
             };
             let wait_time =
@@ -330,7 +335,7 @@ impl<const MAX_SIMULTANEOUS: usize> super::AsyncRateLimiter
     ///
     /// Panics if the internal mutex is poisoned.
     fn acquire_permit(&self) -> impl Future<Output = Self::SinglePermit<'_>> + Send {
-        use super::RateLimiter;
+        use super::RateLimiter as _;
 
         self.retry_until_acquired(move || self.try_acquire_permit())
     }
@@ -346,7 +351,7 @@ impl<const MAX_SIMULTANEOUS: usize> super::AsyncRateLimiter
         &self,
         num_permits: usize,
     ) -> impl Future<Output = Self::MultiPermit<'_>> + Send {
-        use super::RateLimiter;
+        use super::RateLimiter as _;
 
         self.retry_until_acquired(move || self.try_acquire_permits(num_permits))
     }
@@ -365,7 +370,7 @@ mod tests {
     }
 
     #[test]
-    fn test_can_acquire_permit_immediately_after_normal_construction() {
+    fn can_acquire_permit_immediately_after_normal_construction() {
         let rate_limiter = UnfairRateLimiter::<42>::new(chrono::Duration::seconds(43));
 
         let _permit = rate_limiter
@@ -374,7 +379,7 @@ mod tests {
     }
 
     #[test]
-    fn test_cannot_acquire_permit_immediately_after_exhausted_construction() {
+    fn cannot_acquire_permit_immediately_after_exhausted_construction() {
         let start_time = dt_from_str("2022-01-02 03:04:05Z");
         let interval = chrono::Duration::seconds(43);
         let rate_limiter = UnfairRateLimiter::<42>::new_exhausted_impl(interval, start_time);
@@ -396,7 +401,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn test_can_acquire_permit_from_empty_rate_limiter() {
+        fn can_acquire_permit_from_empty_rate_limiter() {
             let initial_state = State {
                 active_connection_count: 0,
                 expiry_times: std::collections::VecDeque::default(),
@@ -420,7 +425,7 @@ mod tests {
         }
 
         #[test]
-        fn test_can_acquire_permit_when_exactly_1_connection_is_available() {
+        fn can_acquire_permit_when_exactly_1_connection_is_available() {
             const CONNECTION_COUNT: usize = 10;
             let initial_state = State {
                 active_connection_count: CONNECTION_COUNT - 1,
@@ -445,7 +450,7 @@ mod tests {
         }
 
         #[test]
-        fn test_can_acquire_permit_when_expiry_times_is_nearly_full() {
+        fn can_acquire_permit_when_expiry_times_is_nearly_full() {
             let current_time = dt_from_str("2022-01-02 03:04:05Z");
             let initial_expiry_times = std::collections::VecDeque::from([
                 current_time,
@@ -474,7 +479,7 @@ mod tests {
         }
 
         #[test]
-        fn test_can_acquire_permit_from_full_expiries_after_interval_has_passed() {
+        fn can_acquire_permit_from_full_expiries_after_interval_has_passed() {
             let initial_expiry_times = std::collections::VecDeque::from([
                 dt_from_str("2022-01-02 03:03:59Z"),
                 dt_from_str("2022-01-02 03:04:00Z"),
@@ -506,7 +511,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_permit_when_all_connections_are_active() {
+        fn cannot_acquire_permit_when_all_connections_are_active() {
             const CONNECTION_COUNT: usize = 10;
             let initial_state = State {
                 active_connection_count: CONNECTION_COUNT,
@@ -534,7 +539,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_permit_when_previous_permits_are_not_expired() {
+        fn cannot_acquire_permit_when_previous_permits_are_not_expired() {
             let initial_expiry_times = std::collections::VecDeque::from([
                 dt_from_str("2022-01-02 03:04:03Z"),
                 dt_from_str("2022-01-02 03:04:04Z"),
@@ -568,7 +573,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_permit_when_all_expiry_times_are_exactly_at_current_time() {
+        fn cannot_acquire_permit_when_all_expiry_times_are_exactly_at_current_time() {
             let current_time = dt_from_str("2022-01-02 03:04:05Z");
             let initial_expiry_times = std::collections::VecDeque::from([
                 current_time,
@@ -606,7 +611,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_permit_when_all_expiry_times_are_about_to_be_retired() {
+        fn cannot_acquire_permit_when_all_expiry_times_are_about_to_be_retired() {
             let current_time = dt_from_str("2022-01-02 03:04:05Z");
             let initial_expiry_times = std::collections::VecDeque::from([
                 dt_from_str("2022-01-02 03:04:00Z"),
@@ -644,8 +649,8 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_permit_when_sum_of_active_connections_and_expired_connections_equals_max()
-         {
+        fn cannot_acquire_permit_when_sum_of_active_connections_and_expired_connections_equals_max()
+        {
             let initial_expiry_times = std::collections::VecDeque::from([
                 dt_from_str("2022-01-02 03:04:03Z"),
                 dt_from_str("2022-01-02 03:04:04Z"),
@@ -679,7 +684,7 @@ mod tests {
         }
 
         #[test]
-        fn test_dropping_permit_updates_the_state() {
+        fn dropping_permit_updates_the_state() {
             let initial_state = State {
                 active_connection_count: 1,
                 expiry_times: std::collections::VecDeque::default(),
@@ -721,7 +726,7 @@ mod tests {
         use super::*;
 
         #[test]
-        fn test_can_acquire_5_permits_when_all_connections_are_available() {
+        fn can_acquire_5_permits_when_all_connections_are_available() {
             let initial_state = State {
                 active_connection_count: 0,
                 expiry_times: std::collections::VecDeque::default(),
@@ -745,7 +750,7 @@ mod tests {
         }
 
         #[test]
-        fn test_can_acquire_5_permits_when_exactly_5_connections_are_available() {
+        fn can_acquire_5_permits_when_exactly_5_connections_are_available() {
             const CAPACITY: usize = 42;
             const REQUESTED: usize = 5;
 
@@ -772,7 +777,7 @@ mod tests {
         }
 
         #[test]
-        fn test_can_acquire_5_permits_when_all_expiries_slots_are_empty() {
+        fn can_acquire_5_permits_when_all_expiries_slots_are_empty() {
             let initial_state = State {
                 active_connection_count: 0,
                 expiry_times: std::collections::VecDeque::default(),
@@ -796,7 +801,7 @@ mod tests {
         }
 
         #[test]
-        fn test_can_acquire_5_permits_when_exactly_5_expiry_slots_are_available() {
+        fn can_acquire_5_permits_when_exactly_5_expiry_slots_are_available() {
             const CAPACITY: usize = 10;
             const REQUESTED: usize = 5;
 
@@ -831,7 +836,7 @@ mod tests {
         }
 
         #[test]
-        fn test_can_acquire_max_permits() {
+        fn can_acquire_max_permits() {
             const CAPACITY: usize = 10;
 
             let initial_state = State {
@@ -857,7 +862,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_5_permits_when_0_connections_are_available() {
+        fn cannot_acquire_5_permits_when_0_connections_are_available() {
             const CAPACITY: usize = 42;
 
             let initial_state = State {
@@ -887,7 +892,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_5_permits_when_1_connection_is_available() {
+        fn cannot_acquire_5_permits_when_1_connection_is_available() {
             const CAPACITY: usize = 42;
 
             let initial_state = State {
@@ -917,7 +922,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_5_permits_when_4_connections_are_available() {
+        fn cannot_acquire_5_permits_when_4_connections_are_available() {
             const CAPACITY: usize = 42;
 
             let initial_state = State {
@@ -947,7 +952,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_5_permits_when_0_expiry_slots_are_available() {
+        fn cannot_acquire_5_permits_when_0_expiry_slots_are_available() {
             const CAPACITY: usize = 10;
 
             let initial_expiry_times = std::collections::VecDeque::from([
@@ -993,7 +998,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_5_permits_when_1_expiry_slot_is_available() {
+        fn cannot_acquire_5_permits_when_1_expiry_slot_is_available() {
             const CAPACITY: usize = 10;
 
             let initial_expiry_times = std::collections::VecDeque::from([
@@ -1039,7 +1044,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_5_permits_when_4_expiry_slots_are_available() {
+        fn cannot_acquire_5_permits_when_4_expiry_slots_are_available() {
             const CAPACITY: usize = 10;
 
             let initial_expiry_times = std::collections::VecDeque::from([
@@ -1082,7 +1087,7 @@ mod tests {
         }
 
         #[test]
-        fn test_cannot_acquire_5_permits_when_sum_of_active_connections_and_expired_connections_is_too_close_to_max()
+        fn cannot_acquire_5_permits_when_sum_of_active_connections_and_expired_connections_is_too_close_to_max()
          {
             const CAPACITY: usize = 10;
 
@@ -1122,7 +1127,7 @@ mod tests {
         }
 
         #[test]
-        fn test_dropping_permits_updates_the_state() {
+        fn dropping_permits_updates_the_state() {
             let initial_expiry_times = std::collections::VecDeque::from([
                 dt_from_str("2022-01-02 03:04:02Z"),
                 dt_from_str("2022-01-02 03:04:03Z"),
@@ -1169,13 +1174,13 @@ mod tests {
 
     #[cfg(feature = "tokio")]
     mod tokio_tests {
-        use crate::AsyncRateLimiter;
-        use crate::RateLimiter;
+        use crate::AsyncRateLimiter as _;
+        use crate::RateLimiter as _;
 
         use super::*;
 
         #[tokio::test]
-        async fn test_permit_already_available() {
+        async fn permit_already_available() {
             let interval = chrono::Duration::milliseconds(100);
             let limiter = UnfairRateLimiter::<1>::new(interval);
 
@@ -1187,7 +1192,7 @@ mod tests {
         }
 
         #[tokio::test]
-        async fn test_single_permit_cooldown() {
+        async fn single_permit_cooldown() {
             let interval = chrono::Duration::milliseconds(100);
             let limiter = UnfairRateLimiter::<1>::new(interval);
 
@@ -1203,7 +1208,7 @@ mod tests {
         }
 
         #[tokio::test]
-        async fn test_multi_permit_cooldown() {
+        async fn multi_permit_cooldown() {
             let interval = chrono::Duration::milliseconds(100);
             let limiter = UnfairRateLimiter::<3>::new(interval);
 

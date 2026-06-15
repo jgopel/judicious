@@ -3,6 +3,8 @@
 //! This example demonstrates how to use the rate limiter to control access to a shared resource
 //! where the "cost" (cooldown) is applied after the work is done.
 
+#![expect(clippy::print_stdout, reason = "example code")]
+
 use judicious::RateLimiter as _;
 
 const DEFAULT_SLEEP: std::time::Duration = std::time::Duration::from_millis(100);
@@ -27,7 +29,7 @@ async fn main() {
         tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
         println!("Work done. Dropping permit.");
-    }
+    };
     // Permit is dropped here. The 1-second cooldown starts NOW.
 
     println!("Trying to re-acquire immediately (should fail)...");
@@ -60,12 +62,12 @@ async fn main() {
                 tokio::time::sleep(DEFAULT_SLEEP).await;
             }
         }
-        Err(e) => println!("Failed with unexpected error: {e}"),
+        Err(error) => println!("Failed with unexpected error: {error}"),
     }
 
     println!("Trying to acquire again...");
     match limiter.try_acquire_permit() {
         Ok(_) => println!("Success! Permit acquired."),
-        Err(e) => println!("Failed: {e}"),
+        Err(error) => println!("Failed: {error}"),
     }
 }

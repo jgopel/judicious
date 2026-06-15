@@ -96,11 +96,6 @@ repos:
         entry: bash -c 'cargo doc'
         language: rust
         pass_filenames: false
-      - id: cargo-check
-        name: cargo check
-        entry: bash -c 'RUSTFLAGS="$RUSTFLAGS --deny warnings" cargo check --all-targets --all-features'
-        language: rust
-        pass_filenames: false
       - id: cargo-clippy
         name: cargo clippy
         entry: bash -c 'RUSTFLAGS="$RUSTFLAGS --deny warnings" cargo clippy --all-targets --all-features'

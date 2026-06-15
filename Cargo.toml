@@ -25,6 +25,37 @@ tracing = "0.1.44"
 pretty_assertions = "1.4.1"
 tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }
 
+[lints.clippy]
+# Enable all warnings
+all = { level = "warn", priority = -1 }
+cargo = { level = "warn", priority = -1 }
+complexity = { level = "warn", priority = -1 }
+correctness = { level = "warn", priority = -1 }
+pedantic = { level = "warn", priority = -1 }
+perf = { level = "warn", priority = -1 }
+restriction = { level = "warn", priority = -1 }
+style = { level = "warn", priority = -1 }
+suspicious = { level = "warn", priority = -1 }
+
+# Blacklist some we don't agree with
+absolute-paths = "allow"
+arbitrary-source-item-ordering = "allow"
+arithmetic-side-effects = "allow"
+blanket-clippy-restriction-lints = "allow"
+error-impl-error = "allow"
+exhaustive-enums = "allow"
+expect-used = "allow"
+implicit-return = "allow"
+missing-assert-message = "allow"
+missing-docs-in-private-items = "allow"
+missing-inline-in-public-items = "allow"
+question-mark-used = "allow"
+single-call-fn = "allow"
+single-char-lifetime-names = "allow"
+std-instead-of-alloc = "allow"
+std-instead-of-core = "allow"
+use-debug = "allow"
+
 [lints.rust]
 missing_debug_implementations = "warn"
 missing_docs = "warn"
@@ -34,8 +65,16 @@ unsafe_code = "warn"
 unused_import_braces = "warn"
 unused_qualifications = "warn"
 
-[lints.clippy]
-# Enable all warnings
-all = { level = "warn", priority = -1 }
-pedantic = { level = "warn", priority = -1 }
-cargo = { level = "warn", priority = -1 }
+[profile.release]
+codegen-units = 1
+lto = "fat"
+strip = "symbols"
+
+[profile.release-with-asserts]
+inherits = "release"
+debug-assertions = true
+
+[profile.perf]
+inherits = "release"
+debug = "full"
+strip = "none"
