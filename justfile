@@ -4,7 +4,7 @@ test:
     cargo nextest run --all-targets --all-features
 
 quality:
-    uv run pre-commit run --all-files
+    prek run --all-files
 
 check-all-features:
     RUSTFLAGS=-Awarnings cargo hack check --feature-powerset --all-targets

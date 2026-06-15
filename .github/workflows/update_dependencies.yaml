@@ -42,7 +42,9 @@ jobs:
 
       # Python
       - run: uv lock --upgrade
-      - run: uv run pre-commit autoupdate
+
+      # pre-commit
+      - run: nix develop --ignore-env --command prek autoupdate
 
       # Rust
       - run: uv run scripts/update_rust_toolchain.py

@@ -39,7 +39,7 @@ To run all code quality checks (formatting, linting, etc.):
 just quality
 ```
 
-This command executes `pre-commit` across all files via `uv`. It runs:
+This command executes `pre-commit` across all files. It runs:
 
 - **General**: YAML/TOML checks, trailing whitespace, etc.
 - **Rust**: `cargo fmt`, `cargo check`, `cargo clippy`, `cargo machete` (unused
