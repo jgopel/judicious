@@ -17,6 +17,13 @@ mod mutex_common;
 /// [`trailing_edge::RateLimiter`](crate::trailing_edge::RateLimiter).
 pub mod mutex;
 
+/// A channel-backed implementation of an unfair trailing-edge rate limiter.
+///
+/// This variant has no internal mutex around its state, so acquisition requires mutable access to
+/// the limiter. Permits report their drop time back to the limiter through a channel and do not
+/// borrow the limiter itself.
+pub mod queue;
+
 /// The default unfair trailing-edge [`RateLimiter`](crate::RateLimiter).
 ///
 /// This alias lets you ask for "an unfair trailing-edge rate limiter" by *property* rather than by

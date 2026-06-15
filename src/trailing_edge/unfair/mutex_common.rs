@@ -279,13 +279,13 @@ where
     }
 }
 
-impl<const MAX_SIMULTANEOUS: usize, TState> crate::RateLimiter
-    for RateLimiter<MAX_SIMULTANEOUS, TState>
+impl<'a, const MAX_SIMULTANEOUS: usize, TState> crate::RateLimiter
+    for &'a RateLimiter<MAX_SIMULTANEOUS, TState>
 where
-    for<'a> TState: StateStore + 'a,
+    TState: StateStore,
 {
-    type SinglePermit<'a> = SinglePermit<TState::PermitState<'a>>;
-    type MultiPermit<'a> = MultiPermit<TState::PermitState<'a>>;
+    type SinglePermit = SinglePermit<TState::PermitState<'a>>;
+    type MultiPermit = MultiPermit<TState::PermitState<'a>>;
     type Error = Error;
 
     /// Attempts to acquire a single permit.
@@ -296,7 +296,7 @@ where
     ///
     /// Returns [`Error::NoPermitAvailable`] if all slots are occupied (either by active permits or by cooldowns from recently dropped permits).
     /// Returns [`Error::MutexPoisoned`] if the internal state mutex is poisoned.
-    fn try_acquire_permit(&self) -> Result<Self::SinglePermit<'_>, Self::Error> {
+    fn try_acquire_permit(self) -> Result<Self::SinglePermit, Self::Error> {
         self.try_acquire_permit_impl(&chrono::Utc::now().naive_utc())
     }
 
@@ -308,10 +308,7 @@ where
     ///
     /// Returns [`Error::NoPermitAvailable`] if there are insufficient slots.
     /// Returns [`Error::MutexPoisoned`] if the internal state mutex is poisoned.
-    fn try_acquire_permits(
-        &self,
-        num_permits: usize,
-    ) -> Result<Self::MultiPermit<'_>, Self::Error> {
+    fn try_acquire_permits(self, num_permits: usize) -> Result<Self::MultiPermit, Self::Error> {
         self.try_acquire_permits_impl(&chrono::Utc::now().naive_utc(), num_permits)
     }
 }
@@ -355,11 +352,11 @@ where
 }
 
 #[cfg(feature = "tokio")]
-impl<const MAX_SIMULTANEOUS: usize, TState> crate::AsyncRateLimiter
-    for RateLimiter<MAX_SIMULTANEOUS, TState>
+impl<'a, const MAX_SIMULTANEOUS: usize, TState> crate::AsyncRateLimiter
+    for &'a RateLimiter<MAX_SIMULTANEOUS, TState>
 where
-    for<'a> TState: StateStore + Sync + 'a,
-    for<'a> TState::PermitState<'a>: Send,
+    TState: StateStore + Sync,
+    TState::PermitState<'a>: Send,
 {
     /// Asynchronously acquires a single permit.
     ///
@@ -368,7 +365,7 @@ where
     /// # Panics
     ///
     /// Panics if the internal mutex is poisoned.
-    fn acquire_permit(&self) -> impl Future<Output = Self::SinglePermit<'_>> + Send {
+    fn acquire_permit(self) -> impl Future<Output = Self::SinglePermit> + Send {
         use crate::RateLimiter as _;
 
         self.retry_until_acquired(move || self.try_acquire_permit())
@@ -380,10 +377,7 @@ where
     /// # Panics
     ///
     /// Panics if the internal mutex is poisoned.
-    fn acquire_permits(
-        &self,
-        num_permits: usize,
-    ) -> impl Future<Output = Self::MultiPermit<'_>> + Send {
+    fn acquire_permits(self, num_permits: usize) -> impl Future<Output = Self::MultiPermit> + Send {
         use crate::RateLimiter as _;
 
         self.retry_until_acquired(move || self.try_acquire_permits(num_permits))
