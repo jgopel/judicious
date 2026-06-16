@@ -1,3 +1,6 @@
+mod common;
+mod mutex_common;
+
 /// An `Arc`-backed implementation of an unfair trailing-edge rate limiter.
 ///
 /// This is the concrete implementation that backs the [`RateLimiter`] alias. Its permits hold an
@@ -6,8 +9,6 @@
 /// specifically want this variant; otherwise prefer selecting a limiter by property through
 /// [`RateLimiter`] or [`trailing_edge::RateLimiter`](crate::trailing_edge::RateLimiter).
 pub mod arc_mutex;
-
-mod mutex_common;
 
 /// A mutex-backed implementation of an unfair trailing-edge rate limiter whose permits borrow the
 /// limiter.

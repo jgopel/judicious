@@ -8,13 +8,7 @@ pub enum Error {
     NoPermitAvailable(Option<chrono::DateTime<chrono::Utc>>),
 }
 
-type ExpiryTimes = std::collections::VecDeque<chrono::NaiveDateTime>;
-
-#[derive(Debug, Clone, Default, PartialEq)]
-struct State {
-    active_connection_count: usize,
-    expiry_times: ExpiryTimes,
-}
+type State = super::common::State;
 
 type Sender = std::sync::mpsc::Sender<chrono::NaiveDateTime>;
 

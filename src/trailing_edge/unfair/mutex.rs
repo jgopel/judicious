@@ -24,7 +24,7 @@ impl super::mutex_common::StateStore for std::sync::Mutex<State> {
 pub type Error = super::mutex_common::Error;
 
 /// Internal state of the rate limiter.
-pub type State = super::mutex_common::State;
+pub type State = super::common::State;
 
 /// A RAII permit for a single unit of concurrency.
 ///
