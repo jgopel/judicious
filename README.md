@@ -8,19 +8,22 @@ is returned (dropped).
 
 ## Usage
 
-The main feature currently is `trailing_edge::UnfairRateLimiter`. There are
+The main feature currently is `trailing_edge::RateLimiter`. Aliases let you
+select an implementation by property rather than by naming a concrete type:
+`trailing_edge::RateLimiter` asks for any trailing-edge limiter, while
+`trailing_edge::unfair::RateLimiter` narrows it to an unfair one. There are
 future plans for adding a fair rate limiter.
 
 ```rust
 use chrono::Duration;
-use judicious::{trailing_edge::UnfairRateLimiter, RateLimiter as _};
+use judicious::RateLimiter as _;
 
 #[tokio::main]
 async fn main() {
     // Create a limiter allowing 1 concurrent operation.
     // Once an operation finishes, that slot is unavailable for 1 second.
-    const NUM_SLOTS = 1;
-    let limiter = UnfairRateLimiter::<NUM_SLOTS>::new(Duration::seconds(1));
+    const NUM_SLOTS: usize = 1;
+    let limiter = judicious::trailing_edge::RateLimiter::<NUM_SLOTS>::new(Duration::seconds(1));
 
     {
         println!("Acquiring permit...");

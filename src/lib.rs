@@ -3,7 +3,7 @@
 //! `judicious` provides a rate-limiting mechanism that enforces a cooldown period after a resource
 //! has been used.
 //!
-//! The main type is [`trailing_edge::UnfairRateLimiter`], which limits the number of simultaneous
+//! The main type is [`trailing_edge::RateLimiter`], which limits the number of simultaneous
 //! "permits". Unlike a standard semaphore or token bucket, `judicious` is designed for scenarios
 //! where the cooldown should depend on when the resource is *released* (returned), not when it was
 //! acquired.
@@ -15,17 +15,18 @@
 /// Rate limiters whose cooldown starts when permits are returned.
 pub mod trailing_edge;
 
-/// A trait for all the rate limiters in this crate.
+/// A trait for borrowed access to a rate limiter.
+///
+/// Implementations are provided for references to concrete limiters rather than for the limiter
+/// values themselves. That lets each implementation express the access it actually requires: a
+/// shared implementation can implement this trait for `&Limiter`, while an implementation with no
+/// interior synchronization can implement it for `&mut Limiter`.
 pub trait RateLimiter {
     /// A RAII permit for a single unit of concurrency.
-    type SinglePermit<'a>
-    where
-        Self: 'a;
+    type SinglePermit;
 
     /// A RAII permit for multiple units of concurrency.
-    type MultiPermit<'a>
-    where
-        Self: 'a;
+    type MultiPermit;
 
     /// The error type returned when a permit cannot be acquired.
     type Error;
@@ -35,25 +36,21 @@ pub trait RateLimiter {
     /// # Errors
     ///
     /// Returns an error if a permit cannot be acquired.
-    fn try_acquire_permit(&self) -> Result<Self::SinglePermit<'_>, Self::Error>;
+    fn try_acquire_permit(self) -> Result<Self::SinglePermit, Self::Error>;
 
     /// Attempts to acquire multiple permits at once.
     ///
     /// # Errors
     ///
     /// Returns an error if the requested number of permits cannot be acquired.
-    fn try_acquire_permits(&self, num_permits: usize)
-    -> Result<Self::MultiPermit<'_>, Self::Error>;
+    fn try_acquire_permits(self, num_permits: usize) -> Result<Self::MultiPermit, Self::Error>;
 }
 
 /// An async-capable rate limiter.
 pub trait AsyncRateLimiter: RateLimiter {
     /// Asynchronously acquires a single permit.
-    fn acquire_permit(&self) -> impl Future<Output = Self::SinglePermit<'_>> + Send;
+    fn acquire_permit(self) -> impl Future<Output = Self::SinglePermit> + Send;
 
     /// Asynchronously acquires the requested number of permits.
-    fn acquire_permits(
-        &self,
-        num_permits: usize,
-    ) -> impl Future<Output = Self::MultiPermit<'_>> + Send;
+    fn acquire_permits(self, num_permits: usize) -> impl Future<Output = Self::MultiPermit> + Send;
 }
