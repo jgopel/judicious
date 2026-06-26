@@ -23,7 +23,47 @@ jobs:
       # Nix
       - uses: DeterminateSystems/nix-installer-action@v22
       - uses: DeterminateSystems/magic-nix-cache-action@v13
-      - run: nix flake update
+
+      - name: Build pre-update closure
+        id: old-closure
+        run: |
+          set -euo pipefail
+          path=$(nix build --no-link --print-out-paths \
+            '.#devShells.x86_64-linux.default')
+          echo "path=${path}" >> "${GITHUB_OUTPUT}"
+
+      - name: Update flake inputs
+        id: flake-update
+        run: |
+          set -euo pipefail
+          nix flake update 2> "${{ runner.temp }}/flake-update.log"
+          {
+            echo 'log<<__EOF__'
+            sed -E 's/\x1b\[[0-9;]*m//g' "${{ runner.temp }}/flake-update.log"
+            echo '__EOF__'
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Build post-update closure
+        id: new-closure
+        run: |
+          set -euo pipefail
+          path=$(nix build --no-link --print-out-paths \
+            '.#devShells.x86_64-linux.default')
+          echo "path=${path}" >> "${GITHUB_OUTPUT}"
+
+      - name: Diff closures
+        id: closure-diff
+        run: |
+          set -euo pipefail
+          nix store diff-closures \
+            '${{ steps.old-closure.outputs.path }}' \
+            '${{ steps.new-closure.outputs.path }}' \
+            > "${{ runner.temp }}/closure-diff.log"
+          {
+            echo 'diff<<__EOF__'
+            sed -E 's/\x1b\[[0-9;]*m//g' "${{ runner.temp }}/closure-diff.log"
+            echo '__EOF__'
+          } >> "${GITHUB_OUTPUT}"
 
       # Python
       - uses: actions/setup-python@v6
@@ -58,6 +98,20 @@ jobs:
         with:
           commit-message: ':arrow_up: Update dependencies'
           title: ':arrow_up: Update dependencies'
+          body: |
+            Automated dependency update.
+
+            ## Nix input changes
+
+            ```
+            ${{ steps.flake-update.outputs.log }}
+            ```
+
+            ## Nix package changes in `devShells.x86_64-linux.default`
+
+            ```
+            ${{ steps.closure-diff.outputs.diff }}
+            ```
           branch: update-dependencies-${{ steps.date.outputs.date }}
           base: main
           labels: feature
