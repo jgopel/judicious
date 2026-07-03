@@ -30,7 +30,7 @@ repos:
         args:
           - --wrap=80
   - repo: https://github.com/instrumentl/pre-commit-just
-    rev: v0.1
+    rev: v0.2
     hooks:
       - id: format-justfile
 
@@ -47,7 +47,7 @@ repos:
 
   # Python
   - repo: https://github.com/tox-dev/pyproject-fmt
-    rev: v2.25.0
+    rev: v2.25.1
     hooks:
       - id: pyproject-fmt
   - repo: local
