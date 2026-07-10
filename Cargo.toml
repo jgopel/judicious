@@ -1,6 +1,6 @@
 [package]
 name = "judicious"
-version = "2026.7.0"
+version = "2026.7.1"
 authors = ["Jonathan Gopel <jgopel@gmail.com>", "Tony Scimone <scimoneaj@gmail.com>"]
 edition = "2024"
 description = "A rate-limiting library that enforces a cooldown period after a resource has been used (return-time based)."
