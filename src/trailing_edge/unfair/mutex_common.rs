@@ -65,6 +65,7 @@ impl<TState: PermitState> SinglePermit<TState> {
     }
 }
 
+#[expect(clippy::missing_trait_methods, reason = "Bug in clippy 1.97.0")]
 impl<TState: PermitState> Drop for SinglePermit<TState> {
     fn drop(&mut self) {
         self.drop_impl(chrono::Utc::now().naive_utc());
@@ -102,6 +103,7 @@ impl<TState: PermitState> MultiPermit<TState> {
     }
 }
 
+#[expect(clippy::missing_trait_methods, reason = "Bug in clippy 1.97.0")]
 impl<TState: PermitState> Drop for MultiPermit<TState> {
     fn drop(&mut self) {
         self.drop_impl(chrono::Utc::now().naive_utc());

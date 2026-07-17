@@ -47,7 +47,7 @@ repos:
 
   # Python
   - repo: https://github.com/tox-dev/pyproject-fmt
-    rev: v2.25.2
+    rev: v2.25.3
     hooks:
       - id: pyproject-fmt
   - repo: local
@@ -79,27 +79,27 @@ repos:
       - id: cargo-machete
         name: cargo machete
         entry: bash -c 'cargo machete --fix'
-        language: rust
+        language: system
         pass_filenames: false
       - id: cargo-shear
         name: cargo shear
         entry: bash -c 'cargo shear --fix'
-        language: rust
+        language: system
         pass_filenames: false
       - id: cargo-fmt
         name: cargo fmt
         entry: bash -c 'cargo fmt'
-        language: rust
+        language: system
         pass_filenames: false
       - id: cargo-doc
         name: cargo doc
         entry: bash -c 'cargo doc'
-        language: rust
+        language: system
         pass_filenames: false
       - id: cargo-clippy
         name: cargo clippy
         entry: bash -c 'RUSTFLAGS="$RUSTFLAGS --deny warnings" cargo clippy --all-targets --all-features'
-        language: rust
+        language: system
         pass_filenames: false
 
   # Git
