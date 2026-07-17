@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 env:
-  RUST_BACKTRACE: 1
+  CARGO_BUILD_WARNINGS: deny
 
 jobs:
   build:
@@ -15,4 +15,7 @@ jobs:
       - uses: DeterminateSystems/nix-installer-action@main
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
-      - run: nix develop --ignore-env --command cargo build --all-targets --all-features
+      - run: |
+          nix develop \
+            --ignore-env --keep-env-var CARGO_BUILD_WARNINGS \
+            --command cargo build --all-targets --all-features

@@ -8,7 +8,7 @@ quality:
     prek run --all-files
 
 check-all-features:
-    RUSTFLAGS=-Awarnings cargo hack check --feature-powerset --all-targets
+    cargo hack check --feature-powerset --all-targets
 
 udeps:
-    RUSTFLAGS=-Awarnings cargo-nightly hack udeps --feature-powerset --all-targets
+    cargo-nightly hack udeps --feature-powerset --all-targets
