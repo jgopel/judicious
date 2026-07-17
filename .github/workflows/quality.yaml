@@ -3,6 +3,9 @@ name: Quality
 on:
   workflow_call:
 
+env:
+  CARGO_BUILD_WARNINGS: deny
+
 jobs:
   quality:
     name: Quality
@@ -17,9 +20,17 @@ jobs:
       - run: nix flake check --no-update-lock-file
       - run: nix develop --ignore-env --command uv sync --locked
 
-      - run: nix develop --ignore-env --keep-env-var BASE --command just quality
+      - run: |
+          nix develop \
+            --ignore-env --keep-env-var BASE \
+            --command just quality
         env:
           BASE: origin/main
-      - run: nix develop --ignore-env --command just check-all-features
-
-      - run: nix develop --ignore-env --command just udeps
+      - run: |
+          nix develop \
+            --ignore-env --keep-env-var CARGO_BUILD_WARNINGS \
+            --command just check-all-features
+      - run: |
+          nix develop \
+            --ignore-env --keep-env-var CARGO_BUILD_WARNINGS \
+            --command just udeps

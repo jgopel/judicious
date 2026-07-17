@@ -93,12 +93,12 @@ repos:
         pass_filenames: false
       - id: cargo-doc
         name: cargo doc
-        entry: bash -c 'cargo doc'
+        entry: env CARGO_BUILD_WARNINGS=deny cargo doc
         language: system
         pass_filenames: false
       - id: cargo-clippy
         name: cargo clippy
-        entry: bash -c 'RUSTFLAGS="$RUSTFLAGS --deny warnings" cargo clippy --all-targets --all-features'
+        entry: env CARGO_BUILD_WARNINGS=deny cargo clippy --all-targets --all-features
         language: system
         pass_filenames: false
 
