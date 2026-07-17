@@ -1,3 +1,4 @@
+[parallel]
 all: test quality check-all-features udeps
 
 test:
