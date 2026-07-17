@@ -18,12 +18,12 @@ tokio = ["dep:tokio"]
 [dependencies]
 chrono = "0.4.45"
 thiserror = "2.0.18"
-tokio = { version = "1.52.3", features = ["time"], optional = true }
+tokio = { version = "1.53.0", features = ["time"], optional = true }
 tracing = "0.1.44"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
-tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros", "time"] }
+tokio = { version = "1.53.0", features = ["rt-multi-thread", "macros", "time"] }
 
 [lints.clippy]
 # Enable all warnings
@@ -46,6 +46,7 @@ error-impl-error = "allow"
 exhaustive-enums = "allow"
 expect-used = "allow"
 implicit-return = "allow"
+inline-modules = "allow"
 missing-assert-message = "allow"
 missing-docs-in-private-items = "allow"
 missing-inline-in-public-items = "allow"
