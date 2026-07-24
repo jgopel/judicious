@@ -17,13 +17,13 @@ tokio = ["dep:tokio"]
 
 [dependencies]
 chrono = "0.4.45"
-thiserror = "2.0.18"
-tokio = { version = "1.53.0", features = ["time"], optional = true }
+thiserror = "2.0.19"
+tokio = { version = "1.53.1", features = ["time"], optional = true }
 tracing = "0.1.44"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
-tokio = { version = "1.53.0", features = ["rt-multi-thread", "macros", "time"] }
+tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "time"] }
 
 [lints.clippy]
 # Enable all warnings

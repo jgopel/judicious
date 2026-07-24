@@ -23,6 +23,7 @@ dev = [
 line-length = 88
 lint.select = [ "ALL" ]
 lint.ignore = [
+  "CPY001",
   "D103",
   "D203",
   "D212",
