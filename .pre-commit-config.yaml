@@ -40,14 +40,14 @@ repos:
     hooks:
       - id: beautysh
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
+    rev: v0.11.0.1-1
     hooks:
       - id: shellcheck
         exclude: ^\.envrc$
 
   # Python
   - repo: https://github.com/tox-dev/pyproject-fmt
-    rev: v2.27.1
+    rev: v2.28.0
     hooks:
       - id: pyproject-fmt
   - repo: local
