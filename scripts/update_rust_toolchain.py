@@ -6,6 +6,7 @@ import logging
 import os
 import sys
 from pathlib import Path
+from typing import cast
 
 import requests
 import toml
@@ -135,7 +136,7 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    toolchain_file_path: Path = args.toolchain_file.resolve()
+    toolchain_file_path = cast("Path", args.toolchain_file).resolve()
 
     logger.info("--- Rust Toolchain Updater ---")
     logger.info("Targeting toolchain file: %s", toolchain_file_path)
