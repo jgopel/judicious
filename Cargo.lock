@@ -131,7 +131,7 @@ dependencies = [
 
 [[package]]
 name = "judicious"
-version = "2026.8.3"
+version = "2026.9.0"
 dependencies = [
  "chrono",
  "pretty_assertions",
