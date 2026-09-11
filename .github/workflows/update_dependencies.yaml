@@ -65,29 +65,19 @@ jobs:
             echo '__EOF__'
           } >> "${GITHUB_OUTPUT}"
 
-      # Python
-      - uses: actions/setup-python@v6
-        with:
-          python-version-file: .python-version
-      - name: Install the latest version of uv
-        uses: astral-sh/setup-uv@v7
-        with:
-          enable-cache: true
-          cache-dependency-glob: "uv.lock"
       - name: Cache pre-commit environment
         uses: actions/cache@v5
         with:
           path: ~/.cache/pre-commit
-          key: pre-commit-3|${{ env.pythonLocation }}|${{ hashFiles('.pre-commit-config.yaml') }}
-
-      # Python
-      - run: uv lock --upgrade
+          key: pre-commit-4|${{ runner.os }}|${{ hashFiles('flake.lock', '.pre-commit-config.yaml') }}
 
       # pre-commit
       - run: nix develop --ignore-env --command prek autoupdate
 
       # Rust
-      - run: uv run scripts/update_rust_toolchain.py
+      - run: |
+          nix develop --ignore-env --keep-env-var GITHUB_TOKEN \
+            --command just update-rust-toolchain
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: actions-rust-lang/setup-rust-toolchain@v1

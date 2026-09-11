@@ -18,7 +18,6 @@ jobs:
       - uses: DeterminateSystems/magic-nix-cache-action@main
 
       - run: nix flake check --no-update-lock-file
-      - run: nix develop --ignore-env --command uv sync --locked
 
       - run: |
           nix develop \
