@@ -2,13 +2,16 @@
 all: test quality check-all-features udeps
 
 test:
-    cargo nextest run --all-targets --all-features
+    cargo nextest run --workspace --all-targets --all-features
 
 quality:
     prek run --all-files
 
 check-all-features:
-    cargo hack check --feature-powerset --all-targets
+    cargo hack check --workspace --feature-powerset --all-targets
 
 udeps:
-    cargo-nightly hack udeps --feature-powerset --all-targets
+    cargo-nightly hack udeps --workspace --feature-powerset --all-targets
+
+update-rust-toolchain path="rust-toolchain.toml":
+    cargo xtask --bin update_rust_toolchain -- {{ quote(path) }}

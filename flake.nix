@@ -17,11 +17,6 @@
       flake-utils,
       ...
     }:
-    let
-      pythonVersionRaw = builtins.readFile ./.python-version;
-      pythonVersion = builtins.replaceStrings [ "\n" "\r" " " ] [ "" "" "" ] pythonVersionRaw;
-      pythonAttr = "python${builtins.replaceStrings [ "." ] [ "" ] pythonVersion}";
-    in
     flake-utils.lib.eachDefaultSystem (
       system:
       let
@@ -29,8 +24,6 @@
         pkgs = import nixpkgs {
           inherit system overlays;
         };
-
-        python = pkgs.${pythonAttr};
 
         rustDev = (pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml).override {
           extensions = [
@@ -51,10 +44,6 @@
           # Script tooling
           pkgs.git
           pkgs.just
-
-          # Python tooling
-          python
-          pkgs.uv
           pkgs.prek
 
           # Rust tooling
@@ -83,8 +72,6 @@
           if [ -t 0 ]; then
             echo "judicious dev shell"
             echo "Rust: $(rustc --version)"
-            echo "Python: $(python3 --version)"
-            echo "uv: $(uv --version)"
           fi
         '';
 

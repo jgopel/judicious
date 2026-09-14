@@ -1,21 +1,20 @@
 # Development Guide
 
-This project combines Rust for the core library with Python tooling for
-development and quality checks.
+This project uses Rust for the library and maintenance tooling, with prek for
+formatting and quality checks.
 
 ## Prerequisites
 
-- Rust: [Install Rust](https://www.rust-lang.org/tools/install)
-- Python: [Install Python](https://www.python.org/downloads/)
-- uv: [Install uv](https://docs.astral.sh/uv/getting-started/installation/)
-  (used for managing dev dependencies)
+- Nix: [Install Nix](https://nixos.org/download/), with flakes enabled.
 
 ## Setup
 
-1. Install Python dependencies:
-   ```sh
-   uv sync
-   ```
+Enter the development shell to get the pinned Rust toolchain, just, prek, and
+Cargo utilities:
+
+```sh
+nix develop
+```
 
 ## Common Tasks
 
@@ -23,12 +22,10 @@ The project uses a `justfile` to coordinate common tasks.
 
 ### Running Tests
 
-To run the full Rust test suite:
+To run the Rust library and maintenance-tool test suites:
 
 ```sh
 just test
-# OR directly via cargo
-cargo test --all-targets --all-features
 ```
 
 ### Code Quality & Linting
@@ -39,7 +36,7 @@ To run all code quality checks (formatting, linting, etc.):
 just quality
 ```
 
-This command executes `pre-commit` across all files. It runs:
+This command executes `prek` across all files. It runs:
 
 - **General**: YAML/TOML checks, trailing whitespace, etc.
 - **Rust**: `cargo fmt`, `cargo check`, `cargo clippy`, `cargo machete` (unused

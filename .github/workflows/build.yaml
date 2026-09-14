@@ -18,4 +18,4 @@ jobs:
       - run: |
           nix develop \
             --ignore-env --keep-env-var CARGO_BUILD_WARNINGS \
-            --command cargo build --all-targets --all-features
+            --command cargo build --workspace --all-targets --all-features

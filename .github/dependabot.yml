@@ -13,19 +13,6 @@ updates:
       - "jgopel"
       - "ajscimone"
 
-  - package-ecosystem: pip
-    directory: "/"
-    schedule:
-      interval: weekly
-      day: friday
-      time: "09:00"
-    groups:
-    commit-message:
-      prefix: ":arrow_up:"
-    reviewers:
-      - "jgopel"
-      - "scimoneaj"
-
   - package-ecosystem: github-actions
     directory: "/"
     schedule:

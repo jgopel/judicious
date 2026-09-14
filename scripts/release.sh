@@ -26,7 +26,7 @@ fi
 new_version="$("${repo_root}/scripts/compute-next-version-number.sh")"
 echo "Releasing version: ${new_version}"
 
-cargo set-version "${new_version}"
+cargo set-version --package judicious "${new_version}"
 cargo update --package judicious
 
 cargo publish --dry-run --allow-dirty
