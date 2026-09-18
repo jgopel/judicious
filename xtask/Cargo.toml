@@ -9,9 +9,9 @@ name = "update_rust_toolchain"
 path = "src/update_rust_toolchain.rs"
 
 [dependencies]
-clap = { version = "4.6.6", features = ["derive"] }
+clap = { version = "4.6.7", features = ["derive"] }
 semver = "1.0.28"
 serde = { version = "1.0.229", features = ["derive"] }
 thiserror = "2.0.20"
 toml_edit = "0.25.15"
-ureq = { version = "3.4.1", features = ["json"] }
+ureq = { version = "3.4.2", features = ["json"] }
