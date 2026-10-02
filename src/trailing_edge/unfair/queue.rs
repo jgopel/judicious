@@ -35,7 +35,6 @@ impl SinglePermit {
     }
 }
 
-#[expect(clippy::missing_trait_methods, reason = "Bug in clippy 1.97.0")]
 impl Drop for SinglePermit {
     fn drop(&mut self) {
         self.drop_impl(chrono::Utc::now().naive_utc());
@@ -75,7 +74,6 @@ impl MultiPermit {
     }
 }
 
-#[expect(clippy::missing_trait_methods, reason = "Bug in clippy 1.97.0")]
 impl Drop for MultiPermit {
     fn drop(&mut self) {
         self.drop_impl(chrono::Utc::now().naive_utc());
