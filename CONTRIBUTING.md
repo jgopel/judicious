@@ -39,8 +39,9 @@ just quality
 This command executes `prek` across all files. It runs:
 
 - **General**: YAML/TOML checks, trailing whitespace, etc.
+- **TOML**: Tombi formatting with the bundled schema catalog.
 - **Rust**: `cargo fmt`, `cargo check`, `cargo clippy`, `cargo machete` (unused
-  dependency check), and `cargo-sort`.
+  dependency check).
 
 **Note:** You do not need to install the git hooks locally to run these checks;
 `just quality` runs them on demand.
