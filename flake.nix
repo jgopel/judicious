@@ -42,6 +42,7 @@
 
         coreBuildInputs = [
           # Script tooling
+          pkgs.bash
           pkgs.git
           pkgs.just
           pkgs.prek
