@@ -500,7 +500,7 @@ dependencies = [
 
 [[package]]
 name = "judicious"
-version = "2026.10.0"
+version = "2026.10.1"
 dependencies = [
  "chrono",
  "pretty_assertions",
