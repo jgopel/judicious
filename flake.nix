@@ -46,6 +46,7 @@
           pkgs.git
           pkgs.just
           pkgs.prek
+          pkgs.tombi
 
           # Rust tooling
           cargo-nightly

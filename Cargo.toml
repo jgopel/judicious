@@ -8,17 +8,14 @@ license-file = "LICENSE"
 homepage = "https://github.com/jgopel/judicious"
 repository = "https://github.com/jgopel/judicious"
 readme = "README.md"
-keywords = ["rate-limit", "cooldown", "concurrency"]
+keywords = ["concurrency", "cooldown", "rate-limit"]
 categories = ["asynchronous", "rust-patterns"]
-include = ["src/**/*.rs", "/README.md", "/LICENSE"]
+include = ["/LICENSE", "/README.md", "src/**/*.rs"]
 
 [workspace]
+resolver = "3"
 members = ["xtask"]
 default-members = ["."]
-resolver = "3"
-
-[features]
-tokio = ["dep:tokio"]
 
 [dependencies]
 chrono = "0.4.45"
@@ -28,7 +25,10 @@ tracing = "0.1.44"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
-tokio = { version = "1.53.1", features = ["rt-multi-thread", "macros", "time"] }
+tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "time"] }
+
+[features]
+tokio = ["dep:tokio"]
 
 [lints.clippy]
 # Enable all warnings
@@ -74,15 +74,15 @@ unused_import_braces = "warn"
 unused_qualifications = "warn"
 
 [profile.release]
-codegen-units = 1
-lto = "fat"
 strip = "symbols"
-
-[profile.release-with-asserts]
-inherits = "release"
-debug-assertions = true
+lto = "fat"
+codegen-units = 1
 
 [profile.perf]
 inherits = "release"
 debug = "full"
 strip = "none"
+
+[profile.release-with-asserts]
+inherits = "release"
+debug-assertions = true

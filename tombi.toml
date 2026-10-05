@@ -1,0 +1,4 @@
+toml-version = "v1.0.0"
+
+[schema]
+catalog.paths = ["tombi://www.schemastore.org/api/json/catalog.json"]
