@@ -20,12 +20,12 @@ default-members = ["."]
 [dependencies]
 chrono = "0.4.45"
 thiserror = "2.0.21"
-tokio = { version = "1.53.1", features = ["time"], optional = true }
+tokio = { version = "1.53.2", features = ["time"], optional = true }
 tracing = "0.1.44"
 
 [dev-dependencies]
 pretty_assertions = "1.4.1"
-tokio = { version = "1.53.1", features = ["macros", "rt-multi-thread", "time"] }
+tokio = { version = "1.53.2", features = ["macros", "rt-multi-thread", "time"] }
 
 [features]
 tokio = ["dep:tokio"]
