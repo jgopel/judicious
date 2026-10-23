@@ -14,4 +14,4 @@ semver = "1.0.28"
 serde = { version = "1.0.229", features = ["derive"] }
 thiserror = "2.0.21"
 toml_edit = "0.25.17"
-ureq = { version = "3.4.2", features = ["json"] }
+ureq = { version = "3.5.0", features = ["json"] }
