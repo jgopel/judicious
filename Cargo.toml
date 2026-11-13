@@ -5,7 +5,6 @@ authors = ["Jonathan Gopel <jgopel@gmail.com>", "Tony Scimone <scimoneaj@gmail.c
 edition = "2024"
 description = "A rate-limiting library that enforces a cooldown period after a resource has been used (return-time based)."
 license-file = "LICENSE"
-homepage = "https://github.com/jgopel/judicious"
 repository = "https://github.com/jgopel/judicious"
 readme = "README.md"
 keywords = ["concurrency", "cooldown", "rate-limit"]
