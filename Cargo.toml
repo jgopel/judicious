@@ -11,10 +11,8 @@ keywords = ["concurrency", "cooldown", "rate-limit"]
 categories = ["asynchronous", "rust-patterns"]
 include = ["/LICENSE", "/README.md", "src/**/*.rs"]
 
-[workspace]
-resolver = "3"
-members = ["xtask"]
-default-members = ["."]
+[features]
+tokio = ["dep:tokio"]
 
 [dependencies]
 chrono = "0.4.45"
@@ -25,9 +23,6 @@ tracing = "0.1.44"
 [dev-dependencies]
 pretty_assertions = "1.4.1"
 tokio = { version = "1.54.1", features = ["macros", "rt-multi-thread", "time"] }
-
-[features]
-tokio = ["dep:tokio"]
 
 [lints.clippy]
 # Enable all warnings
@@ -71,6 +66,11 @@ trivial_numeric_casts = "warn"
 unsafe_code = "warn"
 unused_import_braces = "warn"
 unused_qualifications = "warn"
+
+[workspace]
+resolver = "3"
+members = ["xtask"]
+default-members = ["."]
 
 [profile.release]
 strip = "symbols"
